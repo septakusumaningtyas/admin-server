@@ -1,7 +1,7 @@
 const express = require('express');
 const mysql = require("mysql");
 const cors = require('cors');
-const bodyParser = require('body-parser');
+const bodyParser = require('body-parser'); //modul nodejs yang digunakan untuk mengambil data dari form
 
 //Create connection
 const db = mysql.createConnection({
@@ -62,8 +62,8 @@ app.get('/getalternatif/:id', (req, res) => {
 
 //Update Alternatif
 app.put('/updatealternatif', (req, res) => {
-    const id = req.params.id;
-    const nama_alternatif = req.params.nama_alternatif;
+    const id = req.body.id;
+    const nama_alternatif = req.body.nama_alternatif;
     const sqlUpdate = "UPDATE tb_alternatif SET nama_alternatif = ? WHERE id = ?";
     db.query(sqlUpdate, [nama_alternatif, id], (err, result) => {
         if(err) throw err;
@@ -115,8 +115,8 @@ app.get('/getkriteria/:id', (req, res) => {
 
 //Update Kriteria
 app.put('/updatekriteria', (req, res) => {
-    const id = req.params.id;
-    const nama_kriteria = req.params.nama_kriteria;
+    const id = req.body.id;
+    const nama_kriteria = req.body.nama_kriteria;
     const sqlUpdate = "UPDATE tb_kriteria SET nama_kriteria = ? WHERE id = ?";
     db.query(sqlUpdate, [nama_kriteria, id], (err, result) => {
         if(err) throw err;
