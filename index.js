@@ -191,10 +191,10 @@ app.get('/getalternatifdetail', (req, res) => {
     })
 });
 
-//Select Single Alternatif
-app.get('/getalternatif/:id', (req, res) => {
+//Select Single Alternatif Detail
+app.get('/getasinglelternatifdetail/:id', (req, res) => {
     const id = req.params.id;
-    const sqlSelect = "SELECT * FROM tb_alternatif WHERE id = ?";
+    const sqlSelect = "SELECT * FROM tb_detail_alternatif WHERE id = ?";
     db.query(sqlSelect, id, (err, result)=> {
         if(err) throw err;
         console.log(result);
@@ -248,8 +248,8 @@ app.get('/getkriteria', (req, res) => {
     })
 });
 
-//Select Single Alternatif
-app.get('/getkriteria/:id', (req, res) => {
+//Select Single Kriteria
+app.get('/getsinglekriteria/:id', (req, res) => {
     const id = req.params.id;
     const sqlSelect = "SELECT * FROM tb_kriteria WHERE id = ?";
     db.query(sqlSelect, id, (err, result)=> {
@@ -340,6 +340,67 @@ app.delete('/deletesubkriteria/:id', (req, res) => {
 //Select Pesan
 app.get('/getpesan', (req, res) => {
     const sqlSelect = "SELECT * FROM tb_pesan";
+    db.query(sqlSelect, (err, result)=> {
+        if(err) throw err;
+        console.log(result);
+        res.send(result);
+    })
+});
+
+//Insert Pesan
+app.post('/addpesan', (req, res) => {
+    const nama = req.body.nama;
+    const alamat_email = req.body.alamat_email;
+    const pesan = req.body.pesan;
+    const sqlInsert = "INSERT INTO tb_pesan (nama, alamat_email, pesan) VALUES (?,?,?)";
+    db.query(sqlInsert, [nama, alamat_email, pesan], (err, result)=> {
+        if(err) throw err;
+        console.log(result);
+        res.send('Pesan added...');
+    })
+});
+
+//Select History/Data Pengguna
+app.get('/getpengguna', (req, res) => {
+    const sqlSelect = "SELECT * FROM tb_pengguna";
+    db.query(sqlSelect, (err, result)=> {
+        if(err) throw err;
+        console.log(result);
+        res.send(result);
+    })
+});
+
+//Insert Konsultasi
+app.post('/addkonsultasi', (req, res) => {
+    const nama_pengguna = req.body.nama_pengguna;
+    const email_pengguna = req.body.email_pengguna;
+    const tgl_akses = req.body.tgl_akses;
+    const alamat_pengguna = req.body.alamat_pengguna;
+    const bobot_harga = req.body.bobot_harga;
+    const bobot_bbm = req.body.bobot_bbm;
+    const bobot_tangki = req.body.bobot_tangki;
+    const bobot_popularitas = req.body.bobot_popularitas;
+    const sqlInsert = "INSERT INTO tb_konsultasi (nama_pengguna, email_pengguna, tgl_akses, alamat_pengguna, bobot_harga, bobot_bbm, bobot_tangki, bobot_popularitas) VALUES (?,?,?,?,?,?,?,?)";
+    db.query(sqlInsert, [nama_pengguna, email_pengguna, tgl_akses, alamat_pengguna, bobot_harga, bobot_bbm, bobot_tangki, bobot_popularitas], (err, result)=> {
+        if(err) throw err;
+        console.log(result);
+        res.send('Data Konsultasi added...');
+    })
+});
+
+//Select Data Konsultasi
+app.get('/getkonsultasi', (req, res) => {
+    const sqlSelect = "SELECT * FROM tb_konsultasi";
+    db.query(sqlSelect, (err, result)=> {
+        if(err) throw err;
+        console.log(result);
+        res.send(result);
+    })
+});
+
+//Select Data Hasil Konsultasi
+app.get('/gethasil', (req, res) => {
+    const sqlSelect = "SELECT * FROM tb_hasil";
     db.query(sqlSelect, (err, result)=> {
         if(err) throw err;
         console.log(result);
