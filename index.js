@@ -1,7 +1,14 @@
 const express = require('express');
 const mysql = require("mysql");
 const cors = require('cors');
+
 const bodyParser = require('body-parser'); //modul nodejs yang digunakan untuk mengambil data dari form
+const cookieParser = require('cookie-parser');
+const session = require('express-session');
+
+const bcrypt = require('bcrypt');
+const { response } = require('express');
+const saltRounds = 10;
 
 //Create connection
 const db = mysql.createConnection({
@@ -20,12 +27,90 @@ db.connect((err) => {
 });
 
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin: ["http://localhost:3000"],
+    methods: ["GET", "POST", "DELETE", "PUT"],
+    credentials: true
+}));
 app.use(express.json());
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieParser());
+app.use(session({
+    key: "userId",
+    secret: "darkblue",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        expires: 60 * 60 *24,
+    },
+}));
 
 app.get('/', (req, res) => {
     res.send('Server running...');
+});
+
+//Register User
+app.post('/register', (req, res) => {
+    const username = req.body.username;
+    const password = req.body.password;
+    const sqlInsert = "INSERT INTO tb_user (username, password, role) VALUES (?,?,'user')";
+    bcrypt.hash(password,saltRounds, (err, hash) => {
+        if(err)
+        {
+            console.log(err);
+        }
+
+        db.query(sqlInsert, [username, hash], (err, result)=> {
+            if(err) throw err;
+            console.log(result);
+            res.send('User added...');
+        })
+    })
+});
+
+app.get("/login", (req, res) => {
+    if(req.session.user) {
+        res.send({loggedIn: true, user: req.session.user});
+    } else {
+        res.send({loggedIn: false});
+    }
+});
+
+app.get("/logout", (req, res) => {
+    if(req.session.user) {
+        res.send({loggedIn: false, user: req.session.user});
+    } else {
+        res.send({loggedIn: true});
+    }
+});
+
+//Login
+app.post('/login', (req, res) => {
+    const username = req.body.username;
+    const password = req.body.password;
+    const sqlInsert = "SELECT * FROM tb_user WHERE username = ?;";
+    db.query(sqlInsert, username, (err, result)=> {
+        if(err) 
+        {
+            res.send({err: err});
+        }
+
+        if(result.length > 0)
+        {
+            bcrypt.compare(password, result[0].password, (err, response) => {
+                if(response)
+                {
+                    req.session.user = result;
+                    console.log(req.session.user);
+                    res.send(result);
+                } else {
+                    res.send({message: "Wrong username/password combination!"})
+                }
+            })
+        }else {
+            res.send({message: "User doesn't exist"})
+        }
+    });
 });
 
 //Insert Alternatif
@@ -81,6 +166,67 @@ app.delete('/deletealternatif/:id', (req, res) => {
     });
 });
 
+//Insert Alternatif Detail
+app.post('/addalternatifdetail', (req, res) => {
+    const nama = req.body.nama;
+    const harga = req.body.harga;
+    const konsumsi_bbm = req.body.konsumsi_bbm;
+    const kapasitas_tangki = req.body.kapasitas_tangki;
+    const popularitas = req.body.popularitas;
+    const sqlInsert = "INSERT INTO tb_detail_alternatif (nama, harga, konsumsi_bbm, kapasitas_tangki, popularitas) VALUES (?,?,?,?,?)";
+    db.query(sqlInsert, [nama, harga, konsumsi_bbm, kapasitas_tangki, popularitas], (err, result)=> {
+        if(err) throw err;
+        console.log(result);
+        res.send('Alternatif Detail added...');
+    })
+});
+
+//Select Alternatif Detail
+app.get('/getalternatifdetail', (req, res) => {
+    const sqlSelect = "SELECT * FROM tb_detail_alternatif";
+    db.query(sqlSelect, (err, result)=> {
+        if(err) throw err;
+        console.log(result);
+        res.send(result);
+    })
+});
+
+//Select Single Alternatif
+app.get('/getalternatif/:id', (req, res) => {
+    const id = req.params.id;
+    const sqlSelect = "SELECT * FROM tb_alternatif WHERE id = ?";
+    db.query(sqlSelect, id, (err, result)=> {
+        if(err) throw err;
+        console.log(result);
+        res.send(result);
+    })
+});
+
+//Update Alternatif Detail
+app.put('/updatealternatifdetail', (req, res) => {
+    const id = req.body.id;
+    const nama = req.body.nama;
+    const harga = req.body.harga;
+    const konsumsi_bbm = req.body.konsumsi_bbm;
+    const kapasitas_tangki = req.body.kapasitas_tangki;
+    const popularitas = req.body.popularitas;
+    const sqlUpdate = "UPDATE tb_detail_alternatif SET nama = ?, harga = ?, konsumsi_bbm = ?, kapasitas_tangki = ?, popularitas = ? WHERE id = ?";
+    db.query(sqlUpdate, [nama, harga, konsumsi_bbm, kapasitas_tangki, popularitas, id], (err, result) => {
+        if(err) throw err;
+        console.log(err);
+    });
+});
+
+//Delete Alternatif Detail
+app.delete('/deletealternatifdetail/:id', (req, res) => {
+    const id = req.params.id;
+    const sqlDelete = "DELETE FROM tb_detail_alternatif WHERE id = ?";
+    db.query(sqlDelete, id, (err, result) => {
+        if(err) throw err;
+        console.log(err);
+    });
+});
+
 //Insert Kriteria
 app.post('/addkriteria', (req, res) => {
     const nama_kriteria = req.body.nama_kriteria;
@@ -124,7 +270,7 @@ app.put('/updatekriteria', (req, res) => {
     });
 });
 
-//Delete Alternatif
+//Delete Kriteria
 app.delete('/deletekriteria/:id', (req, res) => {
     const id = req.params.id;
     const sqlDelete = "DELETE FROM tb_kriteria WHERE id = ?";
@@ -132,6 +278,73 @@ app.delete('/deletekriteria/:id', (req, res) => {
         if(err) throw err;
         console.log(err);
     });
+});
+
+//Insert Sub Kriteria
+app.post('/addsubkriteria', (req, res) => {
+    const kriteria = req.body.kriteria;
+    const sub_kriteria = req.body.sub_kriteria;
+    const bobot = req.body.bobot;
+    const sqlInsert = "INSERT INTO tb_subkriteria (kriteria, sub_kriteria, bobot) VALUES (?,?,?)";
+    db.query(sqlInsert, [kriteria, sub_kriteria, bobot], (err, result)=> {
+        if(err) throw err;
+        console.log(result);
+        res.send('Sub Kriteria added...');
+    })
+});
+
+//Select Sub Kriteria
+app.get('/getsubkriteria', (req, res) => {
+    const sqlSelect = "SELECT * FROM tb_subkriteria";
+    db.query(sqlSelect, (err, result)=> {
+        if(err) throw err;
+        console.log(result);
+        res.send(result);
+    })
+});
+
+//Select Single Alternatif
+app.get('/getkriteria/:id', (req, res) => {
+    const id = req.params.id;
+    const sqlSelect = "SELECT * FROM tb_kriteria WHERE id = ?";
+    db.query(sqlSelect, id, (err, result)=> {
+        if(err) throw err;
+        console.log(result);
+        res.send(result);
+    })
+});
+
+//Update Sub Kriteria
+app.put('/updatesubkriteria', (req, res) => {
+    const id = req.body.id;
+    const kriteria = req.body.kriteria;
+    const sub_kriteria = req.body.sub_kriteria;
+    const bobot = req.body.bobot;
+    const sqlUpdate = "UPDATE tb_subkriteria SET kriteria = ?, sub_kriteria = ?, bobot = ? WHERE id = ?";
+    db.query(sqlUpdate, [kriteria, sub_kriteria, bobot, id], (err, result) => {
+        if(err) throw err;
+        console.log(err);
+    });
+});
+
+//Delete Sub Kriteria
+app.delete('/deletesubkriteria/:id', (req, res) => {
+    const id = req.params.id;
+    const sqlDelete = "DELETE FROM tb_subkriteria WHERE id = ?";
+    db.query(sqlDelete, id, (err, result) => {
+        if(err) throw err;
+        console.log(err);
+    });
+});
+
+//Select Pesan
+app.get('/getpesan', (req, res) => {
+    const sqlSelect = "SELECT * FROM tb_pesan";
+    db.query(sqlSelect, (err, result)=> {
+        if(err) throw err;
+        console.log(result);
+        res.send(result);
+    })
 });
 
 app.listen('3001', () => {
