@@ -408,36 +408,6 @@ app.get('/gethasil', (req, res) => {
     })
 });
 
-//Hitung Alternatif
-app.get('/hitungalternatif', (req, res) => {
-    const sqlSelect = "SELECT COUNT(id) FROM tb_alternatif";
-    db.query(sqlSelect, (err, result)=> {
-        if(err) throw err;
-        console.log(result);
-        res.send(result);
-    })
-});
-
-//Hitung Kriteria
-app.get('/hitungkriteria', (req, res) => {
-    const sqlSelect = "SELECT COUNT(id) FROM tb_kriteria";
-    db.query(sqlSelect, (err, result)=> {
-        if(err) throw err;
-        console.log(result);
-        res.send(result);
-    })
-});
-
-//Hitung Pengguna
-app.get('/hitungpengguna', (req, res) => {
-    const sqlSelect = "SELECT COUNT(id) FROM tb_pengguna";
-    db.query(sqlSelect, (err, result)=> {
-        if(err) throw err;
-        console.log(result);
-        res.send(result);
-    })
-});
-
 app.listen('3001', () => {
     console.log('Server started on port 3001');
 });
